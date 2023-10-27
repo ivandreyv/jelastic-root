@@ -1,0 +1,19 @@
+type: update
+name: Root Access
+
+targetNodes:
+  nodeGroup: '*'
+      
+onInstall:
+  - cmd[${targetNodes.nodeGroup}]: |-
+      TARGET_UID=$(id -u jelastic 2>/dev/null) || TARGET_UID="700"
+      getent passwd "${TARGET_UID}" &>/dev/null && TARGET_USER=$(getent passwd "${TARGET_UID}" | cut -d: -f1)  || TARGET_USER="jelastic"
+      sed -i "\$a${TARGET_USER}\ ALL=NOPASSWD\:\ ALL" /etc/sudoers; echo ${TARGET_USER}
+    user: root
+  - setGlobals:
+      sudo_user: ${response.out}
+
+onUninstall:
+  cmd[${targetNodes.nodeGroup}]: |-
+      sed -i "/${globals.sudo_user}\ ALL=NOPASSWD\:\ ALL/d" /etc/sudoers
+  user: root
